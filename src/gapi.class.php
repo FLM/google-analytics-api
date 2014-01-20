@@ -29,7 +29,7 @@
 
 class gapi {
   const account_data_url = 'https://www.google.com/analytics/feeds/accounts/default';
-  const report_data_url = 'https://www.google.com/analytics/feeds/data';
+  const report_data_url = 'https://www.googleapis.com/analytics/v2.4/data';
   const interface_name = 'GAPI-1.3';
   const dev_mode = false;
 
@@ -39,6 +39,8 @@ class gapi {
   private $report_aggregate_metrics = array();
   private $report_root_parameters = array();
   private $results = array();
+
+  public $apikey;
 
   /**
    * Constructor function for all new gapi instances
@@ -119,7 +121,7 @@ class gapi {
    */
   public function requestReportData($report_id, $dimensions=null, $metrics, $sort_metric=null, $filter=null, $start_date=null, $end_date=null, $start_index=1, $max_results=10000) {
     $parameters = array('ids'=>'ga:' . $report_id);
-
+    $parameters['key'] = $this->apikey;
     if (is_array($dimensions)) {
       $dimensions_string = '';
       foreach ($dimensions as $dimesion) {
@@ -195,6 +197,7 @@ class gapi {
     $parameters['max-results'] = $max_results;
 
     $parameters['prettyprint'] = gapi::dev_mode ? 'true' : 'false';
+    $parameters['key'] = $this->apikey;
 
     $url = new gapiUrl(gapi::report_data_url);
     $response = $url->get($parameters, $this->auth_method->generateAuthHeader());
@@ -703,10 +706,13 @@ class gapiClientLogin extends gapiAuthMethod {
    * @param String $password
    * @return gapi
    */
-  public static function authenticate($email, $password) {
+  public static function authenticate($email, $password, $apikey = null) {
     $auth_method = new gapiClientLogin();
     $auth_method->fetchToken($email, $password);
-    return new gapi($auth_method);
+    $gapi = new gapi($auth_method);
+    $gapi->apikey = $apikey;
+
+    return $gapi;
   }
 }
 
